@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNEAKO — Ultra Mega Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<style>
+  :root {
+    --red: #E81010;
+    --red-deep: #9B0000;
+    --black: #0A0A0A;
+    --white: #F5F5F0;
+    --gray: #1A1A1A;
+    --gray2: #2A2A2A;
+    --gray3: #444;
+    --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Barlow', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* ── GRAIN OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: var(--grain);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 clamp(1.2rem, 5vw, 4rem) clamp(2rem, 6vh, 4rem);
+    overflow: hidden;
+    background: var(--black);
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 30%, rgba(232,16,16,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 80% at 10% 80%, rgba(155,0,0,0.12) 0%, transparent 50%);
+  }
+  .hero-lines {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 48px,
+      rgba(255,255,255,0.02) 48px,
+      rgba(255,255,255,0.02) 49px
+    );
+  }
+  .hero-logo {
+    position: absolute;
+    top: clamp(1rem, 4vw, 2.5rem);
+    left: clamp(1.2rem, 5vw, 4rem);
+    height: 48px;
+    width: auto;
+    z-index: 2;
+    filter: brightness(0) invert(1);
+  }
+  .hero-badge {
+    position: absolute;
+    top: clamp(1rem, 4vw, 2.5rem);
+    right: clamp(1.2rem, 5vw, 4rem);
+    background: var(--red);
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.8rem;
+    z-index: 2;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+  .hero-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 400;
+    font-size: clamp(0.75rem, 2vw, 0.9rem);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 0.6rem;
+    position: relative;
+    z-index: 2;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+  .hero-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4.5rem, 20vw, 14rem);
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    position: relative;
+    z-index: 2;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.35s forwards;
+  }
+  .hero-name span { color: var(--red); }
+  .hero-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 300;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.55);
+    margin-top: 1rem;
+    position: relative;
+    z-index: 2;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.5s forwards;
+  }
+  .hero-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--red), transparent);
+    margin-top: 2rem;
+    position: relative;
+    z-index: 2;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.65s forwards;
+  }
+  .hero-stats {
+    display: flex;
+    gap: clamp(1.5rem, 4vw, 4rem);
+    margin-top: 1.5rem;
+    position: relative;
+    z-index: 2;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+  .hero-stat { display: flex; flex-direction: column; gap: 0.2rem; }
+  .hero-stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.6rem, 4vw, 2.8rem);
+    line-height: 1;
+    color: var(--white);
+  }
+  .hero-stat-value.accent { color: var(--red); }
+  .hero-stat-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.4);
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  .scroll-hint {
+    position: absolute;
+    bottom: 1.5rem;
+    right: clamp(1.2rem, 5vw, 4rem);
+    writing-mode: vertical-rl;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.3);
+    font-family: 'Barlow Condensed', sans-serif;
+    z-index: 2;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTION WRAPPER ── */
+  .section {
+    padding: clamp(3rem, 8vw, 7rem) clamp(1.2rem, 5vw, 4rem);
+    position: relative;
+  }
+  .section-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gray2);
+    max-width: 80px;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 8vw, 5.5rem);
+    line-height: 0.95;
+    margin-bottom: clamp(1.5rem, 4vw, 3rem);
+    color: var(--white);
+  }
+
+  /* ── BIO GRID ── */
+  .bio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1px;
+    background: var(--gray2);
+    border: 1px solid var(--gray2);
+  }
+  .bio-cell {
+    background: var(--gray);
+    padding: 1.5rem 1.6rem;
+    transition: background 0.25s;
+  }
+  .bio-cell:hover { background: #222; }
+  .bio-cell-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 0.45rem;
+  }
+  .bio-cell-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    font-weight: 600;
+    color: var(--white);
+    line-height: 1.25;
+  }
+
+  /* ── TIMELINE ── */
+  .timeline { position: relative; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--red), var(--red-deep), transparent);
+  }
+  .tl-item {
+    padding-left: 2rem;
+    padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
+    position: relative;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.5s ease;
+  }
+  .tl-item.visible {
+    opacity: 1;
+    transform: none;
+  }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 6px;
+    width: 12px;
+    height: 12px;
+    background: var(--black);
+    border: 2px solid var(--red);
+    border-radius: 50%;
+  }
+  .tl-item.controversy::before { background: var(--red); }
+  .tl-date {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 0.3rem;
+  }
+  .tl-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.3rem;
+    line-height: 1.2;
+  }
+  .tl-details {
+    font-size: 0.82rem;
+    color: rgba(245,245,240,0.5);
+    line-height: 1.5;
+    max-width: 560px;
+  }
+  .tl-tag {
+    display: inline-block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.55rem;
+    margin-bottom: 0.4rem;
+    border-radius: 2px;
+  }
+  .tag-career     { background: rgba(0,100,200,0.25); color: #5aabff; border: 1px solid rgba(0,100,200,0.3); }
+  .tag-controversy{ background: rgba(232,16,16,0.2); color: #ff6b6b; border: 1px solid rgba(232,16,16,0.3); }
+  .tag-travel     { background: rgba(0,180,100,0.2); color: #4ecf8c; border: 1px solid rgba(0,180,100,0.3); }
+  .tag-media      { background: rgba(200,150,0,0.2); color: #f0c040; border: 1px solid rgba(200,150,0,0.3); }
+  .tag-personal   { background: rgba(180,0,200,0.2); color: #d070ff; border: 1px solid rgba(180,0,200,0.3); }
+  .tag-business   { background: rgba(200,200,200,0.1); color: #aaa; border: 1px solid rgba(200,200,200,0.2); }
+  .tag-relationship { background: rgba(255,100,180,0.15); color: #ff80c0; border: 1px solid rgba(255,100,180,0.3); }
+
+  /* ── WORLD MAP COUNTRIES ── */
+  .countries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--gray2);
+    border: 1px solid var(--gray2);
+  }
+  .country-card {
+    background: var(--gray);
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .country-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--red);
+    transform: scaleY(0);
+    transition: transform 0.2s;
+    transform-origin: bottom;
+  }
+  .country-card:hover { background: #202020; }
+  .country-card:hover::before { transform: scaleY(1); }
+  .country-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--white);
+  }
+  .country-city {
+    font-size: 0.72rem;
+    color: rgba(245,245,240,0.4);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.05em;
+  }
+  .country-date {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--red);
+    font-family: 'Barlow Condensed', sans-serif;
+    margin-top: 0.15rem;
+  }
+
+  /* ── PARTNERSHIPS ── */
+  .partners-list { display: flex; flex-direction: column; gap: 1px; }
+  .partner-row {
+    background: var(--gray);
+    padding: 1.2rem 1.6rem;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    transition: background 0.2s;
+  }
+  .partner-row:hover { background: #202020; }
+  .partner-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    font-weight: 700;
+    color: var(--white);
+  }
+  .partner-role {
+    font-size: 0.72rem;
+    color: rgba(245,245,240,0.45);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.05em;
+    margin-top: 0.1rem;
+  }
+  .partner-period {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(245,245,240,0.4);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  .partner-status {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.65rem;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .status-fallout    { background: rgba(232,16,16,0.2); color: #ff6b6b; border: 1px solid rgba(232,16,16,0.3); }
+  .status-active     { background: rgba(0,200,100,0.2); color: #4ecf8c; border: 1px solid rgba(0,200,100,0.3); }
+  .status-collaborative { background: rgba(0,150,255,0.2); color: #5aabff; border: 1px solid rgba(0,150,255,0.3); }
+  .status-frequent   { background: rgba(200,150,0,0.2); color: #f0c040; border: 1px solid rgba(200,150,0,0.3); }
+  .status-advisor    { background: rgba(180,0,200,0.15); color: #d070ff; border: 1px solid rgba(180,0,200,0.3); }
+  .status-former     { background: rgba(200,200,200,0.1); color: #888; border: 1px solid rgba(200,200,200,0.2); }
+
+  /* ── CHART BAR ── */
+  .chart-wrap { padding: 1rem 0; }
+  .chart-row { margin-bottom: 1rem; }
+  .chart-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    color: rgba(245,245,240,0.7);
+    margin-bottom: 0.35rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .chart-track {
+    background: var(--gray2);
+    height: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .chart-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), #ff4444);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 1s cubic-bezier(0.4,0,0.2,1);
+  }
+  .chart-fill.animated { transform: scaleX(1); }
+
+  /* ── LEGAL BOX ── */
+  .legal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
+  .legal-card {
+    background: var(--gray);
+    border: 1px solid var(--gray2);
+    padding: 1.5rem;
+    position: relative;
+  }
+  .legal-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+  }
+  .legal-card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 1rem;
+  }
+  .legal-kv { margin-bottom: 0.6rem; }
+  .legal-key {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.35);
+    margin-bottom: 0.15rem;
+  }
+  .legal-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--white);
+    line-height: 1.3;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--gray2);
+    margin: 0 clamp(1.2rem, 5vw, 4rem);
+    width: calc(100% - clamp(2.4rem, 10vw, 8rem));
+  }
+
+  /* ── MARQUEE ── */
+  .marquee-wrap {
+    overflow: hidden;
+    background: var(--red);
+    padding: 0.75rem 0;
+    position: relative;
+  }
+  .marquee-track {
+    display: flex;
+    gap: 0;
+    animation: marquee 18s linear infinite;
+    white-space: nowrap;
+  }
+  .marquee-item {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    letter-spacing: 0.08em;
+    color: #fff;
+    padding: 0 2rem;
+    opacity: 0.9;
+  }
+  .marquee-item span {
+    color: rgba(0,0,0,0.5);
+    margin-right: 2rem;
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--black);
+    border-top: 1px solid var(--gray2);
+    padding: 2rem clamp(1.2rem, 5vw, 4rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  footer img { height: 32px; filter: brightness(0) invert(1); opacity: 0.6; }
+  .footer-text {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.25);
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  /* ── NAV ── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,10,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gray2);
+    padding: 0 clamp(1.2rem, 5vw, 4rem);
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav a {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.45);
+    text-decoration: none;
+    padding: 1rem 1rem;
+    white-space: nowrap;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+  .nav a:hover { color: var(--white); }
+  .nav a.active { color: var(--red); border-bottom: 2px solid var(--red); }
+
+  /* ── QUOTE BOX ── */
+  .quote-box {
+    background: var(--gray);
+    border-left: 3px solid var(--red);
+    padding: 1.5rem 2rem;
+    margin: 2rem 0;
+  }
+  .quote-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(1.1rem, 3vw, 1.6rem);
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--white);
+    font-style: italic;
+  }
+  .quote-src {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-top: 0.75rem;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  /* ── REGION BARS ── */
+  .region-section { margin-bottom: 2rem; }
+  .region-heading {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.5);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--gray2);
+  }
+
+  /* ── GLOBE SECTION ── */
+  .globe-section {
+    background: var(--black);
+    position: relative;
+    overflow: hidden;
+  }
+  .globe-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 70% at 50% 50%, rgba(232,16,16,0.055) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .globe-wrapper {
+    display: flex;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .globe-canvas-wrap {
+    position: relative;
+    flex: 1 1 280px;
+    min-width: 240px;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .globe-canvas-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -8%;
+    background: radial-gradient(circle, rgba(232,16,16,0.09) 30%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  #globeCanvas {
+    display: block;
+    position: relative;
+    z-index: 1;
+    cursor: grab;
+    border-radius: 50%;
+    box-shadow:
+      0 0 50px rgba(232,16,16,0.14),
+      0 0 100px rgba(232,16,16,0.06);
+  }
+  #globeCanvas:active { cursor: grabbing; }
+  .globe-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(6,6,6,0.97);
+    border: 1px solid var(--red);
+    padding: 0.55rem 1rem;
+    z-index: 60;
+    transform: translate(-50%, calc(-100% - 16px));
+    white-space: nowrap;
+    display: none;
+    box-shadow: 0 4px 24px rgba(232,16,16,0.3);
+  }
+  .globe-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -6px; left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--red);
+  }
+  .globe-tooltip-country {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--white);
+  }
+  .globe-tooltip-city {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.74rem;
+    color: rgba(245,245,240,0.5);
+    margin-top: 0.1rem;
+  }
+  .globe-tooltip-date {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-top: 0.25rem;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  .globe-sidebar {
+    flex: 0 0 auto;
+    width: min(240px, 100%);
+  }
+  .globe-count-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 10vw, 6.5rem);
+    line-height: 0.85;
+    color: var(--red);
+    letter-spacing: -0.02em;
+  }
+  .globe-count-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.67rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.32);
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--gray2);
+    margin-top: 0.25rem;
+  }
+  .globe-region-list { display: flex; flex-direction: column; gap: 1rem; }
+  .globe-region-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.42);
+    margin-bottom: 0.3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .globe-region-count { color: var(--red); font-size: 0.82rem; font-weight: 600; }
+  .globe-region-bar {
+    height: 3px;
+    background: var(--gray2);
+    overflow: hidden;
+  }
+  .globe-region-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red-deep), var(--red));
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .globe-hint {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(245,245,240,0.17);
+    margin-top: 2rem;
+    text-align: center;
+  }
+  .globe-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(10,10,10,0.85);
+    z-index: 5;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--red);
+    pointer-events: none;
+    transition: opacity 0.8s;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .partner-row {
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+    }
+    .partner-period { grid-column: 1; font-size: 0.7rem; }
+    .partner-status { grid-column: 2; grid-row: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg"></div>
+  <div class="hero-lines"></div>
+  <img class="hero-logo" src="data:image/avif;base64,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" alt="SNEAKO">
+  <div class="hero-badge">● LIVE DATA</div>
+  <p class="hero-eyebrow">Nicolas Kenn De Balinthazy</p>
+  <h1 class="hero-name">SNEA<span>K</span>O</h1>
+  <p class="hero-sub">Streamer · Commentator · Creator · 2013–2026</p>
+  <div class="hero-divider"></div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <span class="hero-stat-value accent">13</span>
+      <span class="hero-stat-label">Years Active</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-value">20+</span>
+      <span class="hero-stat-label">Countries Visited</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-value accent">3</span>
+      <span class="hero-stat-label">YT Bans / Reinstated</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-value">27</span>
+      <span class="hero-stat-label">Age (Born Sep 8, 1998)</span>
+    </div>
+  </div>
+  <span class="scroll-hint">Scroll to Explore</span>
+</section>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#bio" class="active">Bio</a>
+  <a href="#globe">Globe</a>
+  <a href="#timeline">Timeline</a>
+  <a href="#world">World Map</a>
+  <a href="#activity">Activity</a>
+  <a href="#network">Network</a>
+  <a href="#legal">Legal</a>
+</nav>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="marquee-item">STREAMER <span>✦</span></span>
+    <span class="marquee-item">IRL CONTENT <span>✦</span></span>
+    <span class="marquee-item">POLITICAL COMMENTARY <span>✦</span></span>
+    <span class="marquee-item">SOUTHEAST ASIA TOUR 2026 <span>✦</span></span>
+    <span class="marquee-item">FORMER MRBEAST VIDEOGRAPHER <span>✦</span></span>
+    <span class="marquee-item">KICK EXCLUSIVE <span>✦</span></span>
+    <span class="marquee-item">20+ COUNTRIES <span>✦</span></span>
+    <span class="marquee-item">STREAMER <span>✦</span></span>
+    <span class="marquee-item">IRL CONTENT <span>✦</span></span>
+    <span class="marquee-item">POLITICAL COMMENTARY <span>✦</span></span>
+    <span class="marquee-item">SOUTHEAST ASIA TOUR 2026 <span>✦</span></span>
+    <span class="marquee-item">FORMER MRBEAST VIDEOGRAPHER <span>✦</span></span>
+    <span class="marquee-item">KICK EXCLUSIVE <span>✦</span></span>
+    <span class="marquee-item">20+ COUNTRIES <span>✦</span></span>
+  </div>
+</div>
+
+<!-- GLOBE -->
+<section class="section globe-section" id="globe">
+  <p class="section-label">IRL Stream Tracker</p>
+  <h2 class="section-title">3D World<br>Tour Map</h2>
+  <div class="globe-wrapper">
+    <div class="globe-canvas-wrap">
+      <canvas id="globeCanvas"></canvas>
+      <div class="globe-loading" id="globeLoading">Initializing Globe…</div>
+      <div class="globe-tooltip" id="globeTooltip">
+        <div class="globe-tooltip-country" id="ttCountry"></div>
+        <div class="globe-tooltip-city" id="ttCity"></div>
+        <div class="globe-tooltip-date" id="ttDate"></div>
+      </div>
+    </div>
+    <div class="globe-sidebar">
+      <div class="globe-count-big">20</div>
+      <div class="globe-count-label">Countries Streamed</div>
+      <div class="globe-region-list" id="globeRegionList"></div>
+      <div class="globe-hint">⟡ Drag to Rotate · Scroll to Zoom</div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- BIO -->
+<section class="section" id="bio">
+  <p class="section-label">Profile</p>
+  <h2 class="section-title">Fast<br>Facts</h2>
+  <div class="bio-grid">
+    <div class="bio-cell">
+      <div class="bio-cell-label">Full Name</div>
+      <div class="bio-cell-value">Nicolas Kenn De Balinthazy</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">Date of Birth</div>
+      <div class="bio-cell-value">September 8, 1998</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">Heritage</div>
+      <div class="bio-cell-value">Haitian (Father)<br>Filipino (Mother)</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">Languages</div>
+      <div class="bio-cell-value">English · French</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">Education</div>
+      <div class="bio-cell-value">High School Dropout</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">Religion</div>
+      <div class="bio-cell-value">Muslim (Converted Apr 2023)</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">Base</div>
+      <div class="bio-cell-value">Miami, FL</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">YouTube Created</div>
+      <div class="bio-cell-value">April 29, 2013</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">Career Start</div>
+      <div class="bio-cell-value">Call of Duty Commentary</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">Early Career</div>
+      <div class="bio-cell-value">Videographer — MrBeast (2017–18)</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">YT Reinstatement</div>
+      <div class="bio-cell-value">October 10, 2025</div>
+    </div>
+    <div class="bio-cell">
+      <div class="bio-cell-label">Current Status</div>
+      <div class="bio-cell-value" style="color:var(--red)">Active — Malaysia, Indonesia, Philippines Tour</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TIMELINE -->
+<section class="section" id="timeline">
+  <p class="section-label">Chronology</p>
+  <h2 class="section-title">Career<br>Timeline</h2>
+
+  <div class="quote-box">
+    <p class="quote-text">"From Call of Duty commentary to Kick streams in Kuala Lumpur — a 13-year journey documented in full."</p>
+    <p class="quote-src">Ultra Mega Report — 2026 Edition</p>
+  </div>
+
+  <div class="timeline" id="timelineEl">
+    <!-- filled by JS -->
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- WORLD MAP -->
+<section class="section" id="world">
+  <p class="section-label">IRL Streams</p>
+  <h2 class="section-title">World<br>Coverage</h2>
+
+  <div id="regionContainer"></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ACTIVITY BREAKDOWN -->
+<section class="section" id="activity">
+  <p class="section-label">Content Analysis</p>
+  <h2 class="section-title">Activity<br>Breakdown</h2>
+
+  <div class="chart-wrap" id="chartEl">
+    <!-- filled by JS -->
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- NETWORK / PARTNERSHIPS -->
+<section class="section" id="network">
+  <p class="section-label">Collaborators</p>
+  <h2 class="section-title">Partnership<br>Network</h2>
+  <div class="partners-list" id="partnersEl"></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- LEGAL -->
+<section class="section" id="legal">
+  <p class="section-label">Business Entities</p>
+  <h2 class="section-title">Legal &amp;<br>Business</h2>
+  <div class="legal-grid" id="legalEl"></div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <img src="data:image/avif;base64,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" alt="SNEAKO">
+  <span class="footer-text">Ultra Mega Report · 2013–2026 · All Data Compiled from Public Sources</span>
+</footer>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const timeline = [
+  { date: "April 16, 2026", event: "Arrival in Malaysia (KL)", type: "2026 Uniting muslim tour", tag: "travel", details: "Officially arrived in Kuala Lumpur to begin the Southeast Asia leg of his 'Uniting Muslims' tour." },
+  { date: "April 14, 2026", event: "NYC Physical Assault", type: "Controversy", tag: "controversy", details: "Attacked by a stranger in Manhattan during a live stream. Claimed it was a 'setup' in subsequent broadcasts." },
+  { date: "March 13, 2026", event: "Public Fallout with Andrew Tate", type: "Relationship", tag: "relationship", details: "Public tension escalated; Tate addressed the fallout citing differences in trajectory and behavior." },
+  { date: "March 11, 2026", event: "Louis Theroux Documentary", type: "Media", tag: "media", details: "Featured in 'Louis Theroux: Inside the Manosphere', exploring his influence and connections." },
+  { date: "March 20–22, 2026", event: "Bosnia (Sarajevo) Eid Tour", type: "2026 World Tour", tag: "travel", details: "Celebrated Eid in Sarajevo; interviewed by Face TV, Bosnia's largest network." },
+  { date: "January 17, 2026", event: "Miami Nightclub Nazi Salute", type: "Controversy", tag: "controversy", details: "Filmed throwing Nazi salutes at a Miami nightclub; led to widespread condemnation and hospitality ban." },
+  { date: "January 2026", event: "Nigeria Tour with IShowSpeed", type: "Travel", tag: "travel", details: "Joined IShowSpeed in Lagos for the 'Speed Does Africa' tour." },
+  { date: "November 25, 2025", event: "YouTube Remonetized", type: "Career", tag: "career", details: "YouTube fully remonetized his channel after a rigorous 39-day review period." },
+  { date: "October 10, 2025", event: "YouTube Reinstatement", type: "Career", tag: "career", details: "Main and secondary channels unbanned after nearly 3 years of permanent suspension." },
+  { date: "June 16, 2025", event: "Eric Adams Interview at Gracie Mansion", type: "Media", tag: "media", details: "Controversial interview with the NYC Mayor; later criticized by The New York Times." },
+  { date: "May 7, 2025", event: "Piers Morgan Walkout", type: "Media / Controversy", tag: "controversy", details: "Walked out of the interview alongside Kanye West after being questioned on social media conduct." },
+  { date: "May 6, 2025", event: "Kanye West Madrid Stream", type: "Collaboration", tag: "career", details: "Official streamer for Kanye West's listening party in Madrid; debuted unreleased tracks." },
+  { date: "November 2024", event: "Project X (PRJX) Launch on X", type: "Career", tag: "career", details: "Began exclusive high-production street interview series on X (Twitter)." },
+  { date: "July 2024", event: "Middle East Tour — Turkey & Lebanon", type: "Travel", tag: "travel", details: "Streams in Istanbul and Beirut; collaboration with 'Arab' in Lebanon." },
+  { date: "March 2024", event: "First Ramadan in Saudi Arabia", type: "Personal", tag: "personal", details: "Documented his first Ramadan as a Muslim in Medina and Mecca." },
+  { date: "October 2023", event: "Viral '24 Hours in Japan' Stream", type: "Travel", tag: "travel", details: "Marathon stream in Tokyo; widely cited as his best travel content." },
+  { date: "April 2023", event: "Conversion to Islam in Dubai", type: "Personal", tag: "personal", details: "Publicly reverted to Islam in Dubai after a series of interviews with Tam Khan." },
+  { date: "July 2023", event: "South America Debut — Colombia", type: "Travel", tag: "travel", details: "IRL streams in Medellin and Bogota." },
+  { date: "October 3, 2022", event: "YouTube Permanent Ban", type: "Career / Controversy", tag: "controversy", details: "Both channels terminated for 'Hateful Conduct' and TOS violations." },
+  { date: "June 23, 2020", event: "Box Office #1 — 'Unsubscribe'", type: "Media", tag: "media", details: "The horror film he starred in hit #1 at the US box office via a pandemic-era theater loophole." },
+  { date: "2017–2018", event: "Lead Videographer for MrBeast", type: "Career", tag: "career", details: "Worked for Jimmy Donaldson during the early viral phase of MrBeast's channel." },
+  { date: "April 29, 2013", event: "YouTube Channel Created", type: "Career", tag: "career", details: "Registered his main YouTube channel, originally focusing on Call of Duty commentary." },
+];
+
+const countries = [
+  { country: "Malaysia", city: "Kuala Lumpur", date: "Apr 2026", region: "Asia Pacific" },
+  { country: "Indonesia", city: "Jakarta / Bali", date: "Apr 2026 (Sched.)", region: "Asia Pacific" },
+  { country: "Philippines", city: "Manila", date: "Apr 2026 (Sched.)", region: "Asia Pacific" },
+  { country: "Japan", city: "Tokyo", date: "Oct 2023", region: "Asia Pacific" },
+  { country: "Thailand", city: "Bangkok / Phuket", date: "2023", region: "Asia Pacific" },
+  { country: "Bosnia", city: "Sarajevo", date: "Mar 2026", region: "Europe" },
+  { country: "Russia", city: "Moscow", date: "Mar 2026", region: "Europe" },
+  { country: "Spain", city: "Madrid", date: "May 2025", region: "Europe" },
+  { country: "France", city: "Paris", date: "Apr 2025", region: "Europe" },
+  { country: "Germany", city: "Frankfurt", date: "Apr 2025", region: "Europe" },
+  { country: "United Kingdom", city: "London", date: "2023–2025", region: "Europe" },
+  { country: "Nigeria", city: "Lagos", date: "Jan 2026", region: "Africa" },
+  { country: "Saudi Arabia", city: "Medina / Mecca", date: "Mar 2024", region: "Middle East" },
+  { country: "Turkey", city: "Istanbul", date: "Jul 2024", region: "Middle East" },
+  { country: "Lebanon", city: "Beirut", date: "Jul 2024", region: "Middle East" },
+  { country: "UAE", city: "Dubai", date: "Apr 2023", region: "Middle East" },
+  { country: "United States", city: "New York / Miami", date: "Ongoing", region: "Americas" },
+  { country: "Colombia", city: "Medellín / Bogotá", date: "Jul 2023", region: "Americas" },
+  { country: "Brazil", city: "Rio de Janeiro", date: "2023", region: "Americas" },
+  { country: "Mexico", city: "Cancún", date: "2024", region: "Americas" },
+];
+
+const partners = [
+  { name: "Andrew Tate", role: "Mentor / Associate", period: "2022–2026", status: "Fallout" },
+  { name: "Kanye West (Ye)", role: "Media Partner", period: "2024–2025", status: "Active / Intermittent" },
+  { name: "IShowSpeed", role: "IRL Event Partner", period: "2026", status: "Collaborative" },
+  { name: "N3on", role: "IRL Co-Streamer", period: "2023–2025", status: "Frequent" },
+  { name: "Tam Khan", role: "Religious Mentor", period: "2023–2024", status: "Advisor" },
+  { name: "MrBeast", role: "Early Employer (Videographer)", period: "2017–2018", status: "Former Employer" },
+];
+
+const activityCounts = [
+  { label: "Travel / IRL Streams", count: 9, max: 10 },
+  { label: "Career Milestones", count: 8, max: 10 },
+  { label: "Controversy Events", count: 7, max: 10 },
+  { label: "Media Appearances", count: 5, max: 10 },
+  { label: "Personal Events", count: 3, max: 10 },
+  { label: "Business / Legal", count: 4, max: 10 },
+  { label: "Relationship / Collab", count: 4, max: 10 },
+];
+
+// ── RENDER TIMELINE ──────────────────────────────────────────
+const tlEl = document.getElementById('timelineEl');
+timeline.forEach(item => {
+  const div = document.createElement('div');
+  div.className = `tl-item${item.tag === 'controversy' ? ' controversy' : ''}`;
+  div.innerHTML = `
+    <span class="tl-tag tag-${item.tag}">${item.type}</span>
+    <div class="tl-date">${item.date}</div>
+    <div class="tl-title">${item.event}</div>
+    <div class="tl-details">${item.details}</div>
+  `;
+  tlEl.appendChild(div);
+});
+
+// ── RENDER COUNTRIES BY REGION ───────────────────────────────
+const regions = {};
+countries.forEach(c => {
+  if (!regions[c.region]) regions[c.region] = [];
+  regions[c.region].push(c);
+});
+const regionOrder = ["Asia Pacific", "Europe", "Middle East", "Americas", "Africa"];
+const container = document.getElementById('regionContainer');
+regionOrder.forEach(r => {
+  if (!regions[r]) return;
+  const section = document.createElement('div');
+  section.className = 'region-section';
+  section.innerHTML = `<div class="region-heading">${r} — ${regions[r].length} ${regions[r].length === 1 ? 'country' : 'countries'}</div>`;
+  const grid = document.createElement('div');
+  grid.className = 'countries-grid';
+  regions[r].forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'country-card';
+    card.innerHTML = `
+      <div class="country-name">${c.country}</div>
+      <div class="country-city">${c.city}</div>
+      <div class="country-date">${c.date}</div>
+    `;
+    grid.appendChild(card);
+  });
+  section.appendChild(grid);
+  container.appendChild(section);
+});
+
+// ── RENDER CHART ─────────────────────────────────────────────
+const chartEl = document.getElementById('chartEl');
+activityCounts.forEach(item => {
+  const pct = (item.count / item.max);
+  const row = document.createElement('div');
+  row.className = 'chart-row';
+  row.innerHTML = `
+    <div class="chart-label"><span>${item.label}</span><span>${item.count} events</span></div>
+    <div class="chart-track"><div class="chart-fill" style="--pct:${pct}"></div></div>
+  `;
+  chartEl.appendChild(row);
+});
+
+// ── RENDER PARTNERS ──────────────────────────────────────────
+const partnersEl = document.getElementById('partnersEl');
+partners.forEach(p => {
+  const statusClass = {
+    'Fallout': 'status-fallout',
+    'Active / Intermittent': 'status-active',
+    'Collaborative': 'status-collaborative',
+    'Frequent': 'status-frequent',
+    'Advisor': 'status-advisor',
+    'Former Employer': 'status-former',
+  }[p.status] || 'status-former';
+  const row = document.createElement('div');
+  row.className = 'partner-row';
+  row.innerHTML = `
+    <div>
+      <div class="partner-name">${p.name}</div>
+      <div class="partner-role">${p.role}</div>
+    </div>
+    <div class="partner-period">${p.period}</div>
+    <div class="partner-status ${statusClass}">${p.status}</div>
+  `;
+  partnersEl.appendChild(row);
+});
+
+// ── RENDER LEGAL ─────────────────────────────────────────────
+document.getElementById('legalEl').innerHTML = `
+  <div class="legal-card">
+    <div class="legal-card-title">SNEAKO LLC</div>
+    <div class="legal-kv"><div class="legal-key">Jurisdiction</div><div class="legal-val">Florida, USA</div></div>
+    <div class="legal-kv"><div class="legal-key">Address</div><div class="legal-val">1221 Brickell Ave, Suite 900, Miami FL 33131</div></div>
+    <div class="legal-kv"><div class="legal-key">Registration</div><div class="legal-val">October 19, 2022</div></div>
+    <div class="legal-kv"><div class="legal-key">Last Update</div><div class="legal-val">February 8, 2026</div></div>
+  </div>
+  <div class="legal-card">
+    <div class="legal-card-title">Individual Entity</div>
+    <div class="legal-kv"><div class="legal-key">Legal Name</div><div class="legal-val">Nicolas Kenn De Balinthazy</div></div>
+    <div class="legal-kv"><div class="legal-key">Address</div><div class="legal-val">999 SW 1st Ave, Apt 3005, Miami FL 33130</div></div>
+  </div>
+  <div class="legal-card">
+    <div class="legal-card-title">Trademark Filing</div>
+    <div class="legal-kv"><div class="legal-key">Mark</div><div class="legal-val">SNEAKO™</div></div>
+    <div class="legal-kv"><div class="legal-key">Status</div><div class="legal-val">Registered / Pending</div></div>
+    <div class="legal-kv"><div class="legal-key">Filing Date</div><div class="legal-val">March 25, 2026</div></div>
+    <div class="legal-kv"><div class="legal-key">Owner</div><div class="legal-val">SNEAKO LLC</div></div>
+  </div>
+`;
+
+// ── 3D GLOBE ─────────────────────────────────────────────────
+(function initGlobe() {
+  if (typeof THREE === 'undefined') {
+    const el = document.getElementById('globeLoading');
+    if (el) el.textContent = 'Globe unavailable';
+    return;
+  }
+
+  const IRL = [
+    { country: "Malaysia",       city: "Kuala Lumpur",      date: "Apr 2026",    lat:  3.139, lon: 101.686 },
+    { country: "Indonesia",      city: "Jakarta / Bali",    date: "Apr 2026",    lat: -6.208, lon: 106.845 },
+    { country: "Philippines",    city: "Manila",             date: "Apr 2026",    lat: 14.599, lon: 120.984 },
+    { country: "Japan",          city: "Tokyo",              date: "Oct 2023",    lat: 35.676, lon: 139.650 },
+    { country: "Thailand",       city: "Bangkok / Phuket",  date: "2023",        lat: 13.756, lon: 100.501 },
+    { country: "Bosnia",         city: "Sarajevo",           date: "Mar 2026",    lat: 43.856, lon:  18.413 },
+    { country: "Russia",         city: "Moscow",             date: "Mar 2026",    lat: 55.755, lon:  37.617 },
+    { country: "Spain",          city: "Madrid",             date: "May 2025",    lat: 40.416, lon:  -3.703 },
+    { country: "France",         city: "Paris",              date: "Apr 2025",    lat: 48.856, lon:   2.352 },
+    { country: "Germany",        city: "Frankfurt",          date: "Apr 2025",    lat: 50.110, lon:   8.682 },
+    { country: "United Kingdom", city: "London",             date: "2023–2025",   lat: 51.507, lon:  -0.127 },
+    { country: "Nigeria",        city: "Lagos",              date: "Jan 2026",    lat:  6.524, lon:   3.379 },
+    { country: "Saudi Arabia",   city: "Medina / Mecca",    date: "Mar 2024",    lat: 24.466, lon:  39.611 },
+    { country: "Turkey",         city: "Istanbul",           date: "Jul 2024",    lat: 41.008, lon:  28.978 },
+    { country: "Lebanon",        city: "Beirut",             date: "Jul 2024",    lat: 33.893, lon:  35.501 },
+    { country: "UAE",            city: "Dubai",              date: "Apr 2023",    lat: 25.204, lon:  55.270 },
+    { country: "United States",  city: "New York / Miami",  date: "Ongoing",     lat: 40.712, lon: -74.005 },
+    { country: "Colombia",       city: "Medellín / Bogotá", date: "Jul 2023",    lat:  6.244, lon: -75.581 },
+    { country: "Brazil",         city: "Rio de Janeiro",    date: "2023",        lat:-22.906, lon: -43.172 },
+    { country: "Mexico",         city: "Cancún",             date: "2024",        lat: 21.161, lon: -86.851 },
+  ];
+
+  // ── Region sidebar bars ──────────────────────────────────
+  const regionCounts = {};
+  IRL.forEach(d => { regionCounts[d.region || 'Other'] = (regionCounts[d.region || 'Other'] || 0) + 1; });
+  const regionsData = [
+    { name: "Asia Pacific", count: 5 },
+    { name: "Europe",       count: 6 },
+    { name: "Middle East",  count: 4 },
+    { name: "Americas",     count: 4 },
+    { name: "Africa",       count: 1 },
+  ];
+  const rListEl = document.getElementById('globeRegionList');
+  if (rListEl) {
+    regionsData.forEach(r => {
+      const pct = r.count / 20;
+      const el = document.createElement('div');
+      el.innerHTML = `
+        <div class="globe-region-name">
+          <span>${r.name}</span>
+          <span class="globe-region-count">${r.count}</span>
+        </div>
+        <div class="globe-region-bar">
+          <div class="globe-region-fill" data-pct="${pct}"></div>
+        </div>`;
+      rListEl.appendChild(el);
+    });
+    const fills = rListEl.querySelectorAll('.globe-region-fill');
+    const rObs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting)
+        fills.forEach(f => { f.style.transform = `scaleX(${f.dataset.pct})`; });
+    }, { threshold: 0.4 });
+    rObs.observe(rListEl);
+  }
+
+  // ── Three.js bootstrap ───────────────────────────────────
+  const canvas = document.getElementById('globeCanvas');
+  const loadingEl = document.getElementById('globeLoading');
+  if (!canvas) return;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.z = 2.6;
+
+  // ── Lighting ─────────────────────────────────────────────
+  scene.add(new THREE.AmbientLight(0xffffff, 0.22));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.95);
+  sun.position.set(5, 3, 4);
+  scene.add(sun);
+  const redPt = new THREE.PointLight(0xff2200, 0.55, 7);
+  redPt.position.set(-2, 1.5, 3);
+  scene.add(redPt);
+  const rimPt = new THREE.PointLight(0x112255, 0.35, 7);
+  rimPt.position.set(2, -2, -4);
+  scene.add(rimPt);
+
+  // ── Globe texture: fallback (instant, no network) ────────
+  function buildFallbackTexture() {
+    const tc = document.createElement('canvas');
+    tc.width = 512; tc.height = 256;
+    const ctx = tc.getContext('2d');
+    ctx.fillStyle = '#060912';
+    ctx.fillRect(0, 0, 512, 256);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 0.5;
+    for (let lat = -75; lat <= 75; lat += 15) {
+      const y = (90 - lat) / 180 * 256;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+    }
+    for (let lon = -165; lon <= 180; lon += 15) {
+      const x = (lon + 180) / 360 * 512;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 256); ctx.stroke();
+    }
+    return new THREE.CanvasTexture(tc);
+  }
+
+  // ── Globe texture: full world map via D3 + TopoJSON ───────
+  async function buildWorldTexture() {
+    const W = 2048, H = 1024;
+    const tc = document.createElement('canvas');
+    tc.width = W; tc.height = H;
+    const ctx = tc.getContext('2d');
+
+    // Deep ocean
+    ctx.fillStyle = '#05080f';
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle depth gradient
+    const grd = ctx.createRadialGradient(W/2, H/2, 80, W/2, H/2, 900);
+    grd.addColorStop(0,   'rgba(12,20,48,0.5)');
+    grd.addColorStop(0.6, 'rgba(5,8,20,0.25)');
+    grd.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    // D3 equirectangular projection (perfect fit for sphere UV)
+    const projection = d3.geoEquirectangular()
+      .scale(W / (2 * Math.PI))
+      .translate([W / 2, H / 2])
+      .precision(0.3);
+    const path = d3.geoPath(projection, ctx);
+
+    // Fetch world atlas topojson (110m = medium resolution, fast)
+    const world = await d3.json(
+      'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
+    );
+
+    const land      = topojson.feature(world, world.objects.land);
+    const countries = topojson.feature(world, world.objects.countries);
+    const borders   = topojson.mesh(world, world.objects.countries, (a, b) => a !== b);
+    const outline   = topojson.mesh(world, world.objects.land);
+
+    // ① Land fill — dark navy, clearly distinct from ocean
+    ctx.fillStyle = '#0e1c35';
+    ctx.beginPath();
+    path(land);
+    ctx.fill();
+
+    // ② Inner country borders — subtle blue-white lines
+    ctx.strokeStyle = 'rgba(140, 175, 215, 0.38)';
+    ctx.lineWidth = 0.65;
+    ctx.beginPath();
+    path(borders);
+    ctx.stroke();
+
+    // ③ Coastlines — brighter, sharper outline
+    ctx.strokeStyle = 'rgba(190, 215, 250, 0.65)';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    path(outline);
+    ctx.stroke();
+
+    // ④ Graticule grid — very subtle
+    const graticule = d3.geoGraticule()();
+    ctx.strokeStyle = 'rgba(255,255,255,0.045)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    path(graticule);
+    ctx.stroke();
+
+    // ⑤ Equator — red accent line
+    ctx.strokeStyle = 'rgba(232, 16, 16, 0.28)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    path({ type: 'LineString', coordinates: [[-180, 0], [-90, 0], [0, 0], [90, 0], [180, 0]] });
+    ctx.stroke();
+
+    // ⑥ Tropics — faint red dashes
+    [23.43, -23.43].forEach(lat => {
+      const y = (90 - lat) / 180 * H;
+      ctx.strokeStyle = 'rgba(232,16,16,0.1)';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([8, 12]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // ⑦ Red glow hotspots at IRL locations (baked into texture for extra depth)
+    IRL.forEach(loc => {
+      const [px, py] = projection([loc.lon, loc.lat]);
+      if (px === null || py === null) return;
+      const glow = ctx.createRadialGradient(px, py, 0, px, py, 18);
+      glow.addColorStop(0,   'rgba(232,16,16,0.55)');
+      glow.addColorStop(0.4, 'rgba(232,16,16,0.15)');
+      glow.addColorStop(1,   'rgba(232,16,16,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(px, py, 18, 0, Math.PI * 2); ctx.fill();
+    });
+
+    return new THREE.CanvasTexture(tc);
+  }
+
+  // ── Specular map ──────────────────────────────────────────
+  function buildSpecMap() {
+    const tc = document.createElement('canvas');
+    tc.width = 512; tc.height = 256;
+    const ctx = tc.getContext('2d');
+    const grd = ctx.createLinearGradient(0, 0, 0, 256);
+    grd.addColorStop(0,    '#0a0a0a');
+    grd.addColorStop(0.35, '#252525');
+    grd.addColorStop(0.5,  '#333333');
+    grd.addColorStop(0.65, '#252525');
+    grd.addColorStop(1,    '#0a0a0a');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, 512, 256);
+    return new THREE.CanvasTexture(tc);
+  }
+
+  // ── Globe mesh (starts with fallback, upgrades async) ─────
+  const globeMat = new THREE.MeshPhongMaterial({
+    map: buildFallbackTexture(),
+    specularMap: buildSpecMap(),
+    specular: new THREE.Color(0x1a3060),
+    shininess: 18,
+  });
+  const globe = new THREE.Mesh(new THREE.SphereGeometry(1, 72, 72), globeMat);
+  scene.add(globe);
+
+  // Async: fetch + paint real world map, swap in
+  buildWorldTexture().then(tex => {
+    globeMat.map = tex;
+    globeMat.needsUpdate = true;
+    if (loadingEl) {
+      loadingEl.style.opacity = '0';
+      setTimeout(() => { loadingEl.style.display = 'none'; }, 600);
+    }
+  }).catch(() => {
+    // Keep fallback silently
+    if (loadingEl) loadingEl.style.display = 'none';
+  });
+
+  // ── Atmosphere rings (back-face spheres) ─────────────────
+  [
+    { r: 1.03, col: 0xe81010, op: 0.038 },
+    { r: 1.07, col: 0x880000, op: 0.026 },
+    { r: 1.14, col: 0x330000, op: 0.014 },
+  ].forEach(({ r, col, op }) => {
+    scene.add(new THREE.Mesh(
+      new THREE.SphereGeometry(r, 32, 32),
+      new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, side: THREE.BackSide })
+    ));
+  });
+
+  // ── Lat/lon → THREE.Vector3 ──────────────────────────────
+  function ll3(lat, lon, r) {
+    const phi   = (90 - lat)   * (Math.PI / 180);
+    const theta = (lon + 180)  * (Math.PI / 180);
+    return new THREE.Vector3(
+      -r * Math.sin(phi) * Math.cos(theta),
+       r * Math.cos(phi),
+       r * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  // ── Markers ──────────────────────────────────────────────
+  const mGroup = new THREE.Group();
+  globe.add(mGroup);
+  const hitboxes   = [];   // for raycasting
+  const pulseRings = [];   // { mesh, phase }
+  const halos      = [];   // { mesh, idx }
+
+  IRL.forEach((loc, i) => {
+    const pos  = ll3(loc.lat, loc.lon, 1.013);
+    const norm = pos.clone().normalize();
+    const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), norm);
+
+    // Core red dot
+    const dot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.013, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0xff1111 })
+    );
+    dot.position.copy(pos);
+    mGroup.add(dot);
+
+    // Soft halo
+    const halo = new THREE.Mesh(
+      new THREE.SphereGeometry(0.026, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff3333, transparent: true, opacity: 0.28 })
+    );
+    halo.position.copy(pos);
+    mGroup.add(halo);
+    halos.push({ mesh: halo, idx: i });
+
+    // 2 staggered pulse rings per marker
+    for (let r = 0; r < 2; r++) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.017, 0.028, 22),
+        new THREE.MeshBasicMaterial({ color: 0xe81010, transparent: true, opacity: 0, side: THREE.DoubleSide })
+      );
+      ring.position.copy(pos);
+      ring.quaternion.copy(quat);
+      mGroup.add(ring);
+      pulseRings.push({ mesh: ring, phase: ((i * 0.41) + r * 0.5) % 1 });
+    }
+
+    // Invisible hitbox (larger sphere for easy picking)
+    const hb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.058, 6, 6),
+      new THREE.MeshBasicMaterial({ visible: false, transparent: true, opacity: 0 })
+    );
+    hb.position.copy(pos);
+    hb.userData = loc;
+    mGroup.add(hb);
+    hitboxes.push(hb);
+  });
+
+  // ── Interaction ──────────────────────────────────────────
+  let isDragging = false;
+  let prevX = 0, prevY = 0;
+  let rotY = 0.5,  rotX = -0.18;
+  let curY = 0.5,  curX = -0.18;
+  let autoRot = true, autoTimer = null;
+  let zoomT = 2.6, zoomC = 2.6;
+
+  function startDrag(x, y) {
+    isDragging = true; prevX = x; prevY = y;
+    autoRot = false; clearTimeout(autoTimer);
+  }
+  function moveDrag(x, y) {
+    if (!isDragging) return;
+    rotY += (x - prevX) * 0.005;
+    rotX += (y - prevY) * 0.005;
+    rotX  = Math.max(-1.3, Math.min(1.3, rotX));
+    prevX = x; prevY = y;
+  }
+  function endDrag() {
+    isDragging = false;
+    autoTimer = setTimeout(() => { autoRot = true; }, 2800);
+  }
+
+  canvas.addEventListener('mousedown',  e => startDrag(e.clientX, e.clientY));
+  canvas.addEventListener('mousemove',  e => { moveDrag(e.clientX, e.clientY); hoverCheck(e.clientX, e.clientY); });
+  canvas.addEventListener('mouseup',    endDrag);
+  canvas.addEventListener('mouseleave', () => { endDrag(); hideTooltip(); });
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    zoomT = Math.max(1.55, Math.min(4.8, zoomT + e.deltaY * 0.0022));
+  }, { passive: false });
+
+  let pinchD = 0;
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (e.touches.length === 1)      startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    else if (e.touches.length === 2) {
+      isDragging = false;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchD = Math.hypot(dx, dy);
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+    else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const d  = Math.hypot(dx, dy);
+      zoomT = Math.max(1.55, Math.min(4.8, zoomT + (pinchD - d) * 0.012));
+      pinchD = d;
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchend', endDrag);
+
+  // ── Tooltip & raycasting ─────────────────────────────────
+  const tooltip  = document.getElementById('globeTooltip');
+  const ttCountry = document.getElementById('ttCountry');
+  const ttCity    = document.getElementById('ttCity');
+  const ttDate    = document.getElementById('ttDate');
+  const raycaster = new THREE.Raycaster();
+  const mouse     = new THREE.Vector2();
+
+  function hideTooltip() { if (tooltip) tooltip.style.display = 'none'; }
+
+  function hoverCheck(cx, cy) {
+    if (!tooltip) return;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x =  ((cx - rect.left) / rect.width)  * 2 - 1;
+    mouse.y = -((cy - rect.top)  / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(hitboxes);
+    if (hits.length) {
+      const loc = hits[0].object.userData;
+      ttCountry.textContent = loc.country;
+      ttCity.textContent    = loc.city;
+      ttDate.textContent    = loc.date;
+      tooltip.style.display = 'block';
+      tooltip.style.left    = (cx - rect.left) + 'px';
+      tooltip.style.top     = (cy - rect.top)  + 'px';
+      canvas.style.cursor   = 'pointer';
+    } else {
+      hideTooltip();
+      canvas.style.cursor = isDragging ? 'grabbing' : 'grab';
+    }
+  }
+
+  // ── Responsive resize ────────────────────────────────────
+  function resize() {
+    if (!canvas.parentElement) return;
+    const size = Math.min(canvas.parentElement.clientWidth, 560);
+    renderer.setSize(size, size);
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ── Render loop ──────────────────────────────────────────
+  let t = 0;
+  (function tick() {
+    requestAnimationFrame(tick);
+    t += 0.016;
+
+    if (autoRot) rotY += 0.0017;
+    curY += (rotY - curY) * 0.065;
+    curX += (rotX - curX) * 0.065;
+    globe.rotation.y = curY;
+    globe.rotation.x = curX;
+
+    zoomC += (zoomT - zoomC) * 0.09;
+    camera.position.z = zoomC;
+
+    // Pulse rings expand outward & fade
+    pulseRings.forEach(pr => {
+      pr.phase = (pr.phase + 0.0075) % 1;
+      pr.mesh.scale.setScalar(1 + pr.phase * 3.2);
+      pr.mesh.material.opacity = (1 - pr.phase) * 0.7;
+    });
+
+    // Halos breathe
+    halos.forEach(h => {
+      h.mesh.material.opacity = 0.2 + Math.sin(t * 1.6 + h.idx * 0.75) * 0.13;
+    });
+
+    renderer.render(scene, camera);
+  })();
+})();
+
+// ── SCROLL ANIMATIONS ────────────────────────────────────────
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      // chart bars
+      const fills = e.target.querySelectorAll('.chart-fill');
+      fills.forEach((f, i) => {
+        setTimeout(() => f.classList.add('animated'), i * 120);
+      });
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.tl-item').forEach(el => io.observe(el));
+document.querySelector('.chart-wrap') && io.observe(document.querySelector('.chart-wrap'));
+
+// Trigger chart on load if in view
+setTimeout(() => {
+  document.querySelectorAll('.chart-fill').forEach((f, i) => {
+    setTimeout(() => f.classList.add('animated'), i * 120 + 500);
+  });
+}, 100);
+
+// ── NAV ACTIVE STATE ─────────────────────────────────────────
+const navLinks = document.querySelectorAll('.nav a');
+const sections = document.querySelectorAll('section[id], div.section[id]');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(s => {
+    if (s.offsetTop - 120 <= window.scrollY) cur = s.id;
+  });
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + cur);
+  });
+}, { passive: true });
+</script>
+</body>
+</html>
